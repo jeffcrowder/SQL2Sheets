@@ -6,6 +6,18 @@
 *.user
 *.userosscache
 *.sln.docstates
+client_secret.json
+*.sln
+packages.config
+SQL2Sheets.csproj
+App.xaml.cs
+App.xaml
+App.config
+Properties/
+
+# GIT stuff
+.gitattributes
+.gitignore
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
