@@ -8,7 +8,7 @@
         Title="SQL 2 Sheet" Height="624.8" HorizontalAlignment="Left" VerticalAlignment="Top" MinWidth="609" MinHeight="615" Width="613.2" ResizeMode="NoResize" Background="#FFE5E5E5">
     <Grid Margin="0,0,3.4,-0.2">
         <TabControl Height="587" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" VerticalAlignment="Top" Width="595" Margin="1,0,0,0">
-            <TabItem Header="Activity" Margin="-2,-2,0,-3" RenderTransformOrigin="1.013,0.167" HorizontalAlignment="Left" Width="100">
+            <TabItem x:Name="ActivityTab" Header="Activity" Margin="-2,-2,0,-3" RenderTransformOrigin="1.013,0.167" HorizontalAlignment="Left" Width="100">
                 <Grid Background="#FFE5E5E5" Width="600" HorizontalAlignment="Left" Margin="-9,-3,-5.4,-4.8">
                     <DataGrid HorizontalAlignment="Left" Height="281" Margin="10,10,0,0" VerticalAlignment="Top" Width="580" AutoGenerateColumns="False" GridLinesVisibility="Horizontal" MinColumnWidth="100" AlternationCount="-3">
                         <DataGrid.Columns>
@@ -24,15 +24,15 @@
             <TabItem x:Name="ProjectTab" Header="Project" Margin="-5,-2,5,-3" Padding="5,1,6,1" Width="100">
                 <Grid Background="#FFE5E5E5" Margin="-4,-4,-3.4,-3.8" HorizontalAlignment="Left" Width="593">
                     <Label Content="Project Name" HorizontalAlignment="Left" Height="30" Margin="10,10,0,0" VerticalAlignment="Top" Width="150"/>
-                    <TextBox x:Name="ProjectName" HorizontalAlignment="Left" Height="30" Margin="10,39,0,0" TextWrapping="Wrap" Text="eg. My_Project" VerticalAlignment="Top" Width="150"/>
+                    <TextBox x:Name="ProjectName" HorizontalAlignment="Left" Height="30" Margin="10,39,0,0" TextWrapping="Wrap" Text="My_Project" VerticalAlignment="Top" Width="150"/>
                     <Label Content="Sheet ID" HorizontalAlignment="Left" Margin="10,80,0,0" VerticalAlignment="Top" Height="30" Width="150"/>
-                    <TextBox x:Name="SheetID" HorizontalAlignment="Left" Height="30" Margin="10,110,0,0" TextWrapping="Wrap" Text="eg. 1c54Cy_B43h5-nmE7r6Slvj2w8Pl0XFxgaWpTxO9s9So" VerticalAlignment="Top" Width="400"/>
+                    <TextBox x:Name="SheetID" HorizontalAlignment="Left" Height="30" Margin="10,110,0,0" TextWrapping="Wrap" Text="1c54Cy_B43h5-nmE7r6Slvj2w8Pl0XFxgaWpTxO9s9So" VerticalAlignment="Top" Width="400"/>
                     <Label Content="SQL connection string" HorizontalAlignment="Left" Margin="10,155,0,0" VerticalAlignment="Top" Width="150" Height="30"/>
-                    <TextBox x:Name="ConnectionString" HorizontalAlignment="Left" Margin="10,185,0,0" TextWrapping="Wrap" Text="eg. Data Source=tul-mssql;Initial Catalog=Division;User ID=xxxxxxx;Password=xxxxxxx" VerticalAlignment="Top" Height="30" Width="574"/>
+                    <TextBox x:Name="ConnectionString" HorizontalAlignment="Left" Margin="10,185,0,0" TextWrapping="Wrap" Text="Data Source=TULLCND62158MM\\SQLEXPRESS;Initial Catalog=TulQual;User ID=tqisadmin;Password=admin2k" VerticalAlignment="Top" Height="40" Width="574"/>
                     <Label Content="Enter the column headers as a comma separated list" HorizontalAlignment="Left" Margin="10,230,0,0" VerticalAlignment="Top" Height="30" Width="290"/>
                     <TextBox x:Name="SqlColumns" HorizontalAlignment="Left" Height="60" Margin="10,260,0,0" TextWrapping="Wrap" Text="eg. col1,col2,col3,col4,col5,col6,......,col49,col50" VerticalAlignment="Top" Width="574"/>
                     <Label Content="Enter the SQL select statement to be run" HorizontalAlignment="Left" Margin="10,335,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.401,-0.211" Width="290" Height="30"/>
-                    <TextBox x:Name="SelectStatement" HorizontalAlignment="Left" Height="183" Margin="10,370,0,0" TextWrapping="Wrap" Text="eg. SELECT [DTStamp] ,[ModelNbr]  ,[SerialNbr] ,[PassFail],[LineNbr] ,[ShiftNbr] ,[Computer]&#xA;             ,[Word40],[Word41],[Word42],[Word43],[Word44] ,[Word45],[Word46],[Word47] ,[Word48]&#xA;     FROM [Division].[dbo].[asyTestRecords]&#xA;     WHERE LineNbr = 2 and DTStamp &gt; '2/7/2018 7:24'&#xA;     ORDER BY DTStamp desc" VerticalAlignment="Top" Width="574"/>
+                    <TextBox x:Name="SelectStatement" HorizontalAlignment="Left" Height="183" Margin="10,370,0,0" TextWrapping="Wrap" Text="eg. SELECT [DTStamp] ,[ModelNbr]  ,[SerialNbr] ,[PassFail],[LineNbr] ,[ShiftNbr] ,[Computer]&#xA;             ,[Word40],[Word41],[Word42],[Word43],[Word44] ,[Word45],[Word46],[Word47] ,[Word48]&#xA;     FROM [Division].[dbo].[asyTestRecords]&#xA;     WHERE LineNbr = 2 and DTStamp &gt; '2/7/2018 7:24'&#xA;     ORDER BY DTStamp desc" VerticalAlignment="Top" Width="574" AcceptsReturn="True"/>
                     <Button x:Name="Run" Content="RUN" HorizontalAlignment="Left" Height="30" Margin="489,10,0,0" VerticalAlignment="Top" Width="95" RenderTransformOrigin="0.486,0.173" Click="RunButton_Click"/>
                 </Grid>
             </TabItem>

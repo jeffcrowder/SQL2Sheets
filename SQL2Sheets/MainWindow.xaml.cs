@@ -30,6 +30,8 @@ namespace SQL2Sheets
     /// </summary>
     public partial class MainWindow : Window
     {
+        private List<DataProject> dpList = new List<DataProject>();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -37,26 +39,68 @@ namespace SQL2Sheets
 
         private void RunButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO
-            GetFormData();
+            // TODO this is place for logic????
+            SetDebugScreen(ProjectName.Text + SheetID.Text + ConnectionString.Text + SqlColumns.Text + SelectStatement.Text);
+
+            // Need to figure out how to dynamically make more program objects based on user entries
+            // Need to make a create object method and a destroy object method.
+            // Now that I have multiple objects created that could run indefinetly now I need threads.
+
+            ActivityTab.IsSelected = true;
+            CreateDataProject();
         }
 
-        private void GetFormData()
+        private void CreateDataProject()
         {
-            TextOutput.Text = ProjectName.Text + SheetID.Text + ConnectionString.Text + SqlColumns.Text + SelectStatement.Text + "\n" + TextOutput.Text;
-            Program p = new Program();
-            p.MainRun();
+            //Problem I dont know if the object is valid! If user puts in bad data program will crash.
+            // ALSO. Yes I know this is rediculous. I should convert the object into a JSON string and pass that instead.
+            dpList.Add(new DataProject(ProjectName.Text,SheetID.Text,ConnectionString.Text,SqlColumns.Text,SelectStatement.Text));
         }
+
+        private void DestroyDataProject()
+        {
+
+            //dpList.Remove();
+        }
+
+        public void SetDebugScreen(string data)
+        {
+            int tl = TextOutput.Text.Length + data.Length;
+            TextOutput.Text = tl.ToString() + data + "\n" + TextOutput.Text;
+        }
+
     }
 
-    class Program
+    class DataProject
     {
         // If modifying these scopes, delete your previously saved credentials
         // at ~/.credentials/sheets.googleapis.com-dotnet-quickstart.json
         static string[] Scopes = { SheetsService.Scope.Spreadsheets };
         static string ApplicationName = "Google Sheets API .NET Quickstart";
-        //static volatile bool exit = false;
 
+        private string name;
+        private string sID;
+        private string connection;
+        private string header;
+        private string select;
+
+        public DataProject(string projectName, string sheetID, string connectionString, string sqlColumns, string selectStatement )
+        {
+            //TODO add the initialization here then call mainRun
+            // change the crazy string arguments into a single JSON object
+            this.name = projectName;
+            this.sID = sheetID;
+            this.connection = connectionString;
+            this.header = sqlColumns;
+            this.select = selectStatement;
+
+            this.MainRun();
+        }
+
+
+
+
+        //TODO start moving this crap to methods or other objects.
         public void MainRun()
         {
             UserCredential credential;
@@ -116,7 +160,7 @@ namespace SQL2Sheets
             {
                 Dimension = "ROWS",
                 StartIndex = 1,
-                SheetId = 1809337217
+                SheetId = 1809337217 //this is a problem
             };
 
             DeleteDimensionRequest ddr = new DeleteDimensionRequest() { Range = dr };
@@ -139,19 +183,26 @@ namespace SQL2Sheets
             update.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
             UpdateValuesResponse result;
             result = update.Execute();
-
-            SqlConnection sqlConnection = new SqlConnection("Data Source=tul-mssql;Initial Catalog=Division;User ID=tqisadmin;Password=admin2k");
+            
+            //SqlConnection sqlConnection = new SqlConnection("Data Source=tul-mssql;Initial Catalog=Division;User ID=tqisadmin;Password=admin2k");
+            SqlConnection sqlConnection = new SqlConnection("Data Source=TULLCND62158MM\\SQLEXPRESS;Initial Catalog=TulQual;User ID=tqisadmin;Password=admin2k");
 
             SqlCommand cmd = new SqlCommand
             {
                 Connection = sqlConnection,
                 CommandTimeout = 60,
                 CommandType = CommandType.Text,
-                CommandText = "SELECT TOP 1000 [ID],[DTStamp],[DTShiftStart],[ModelNbr],[SerialNbr],[PassFail],[LineNbr],[ShiftNbr],[Computer],[Word40],[Word41],[Word42]" +
+                CommandText = "SELECT TOP 10 [Date],[Shift],[Line],[Production],[Repair Bay Units],[Test Pulls],[Repair Bay Units w/o Test Pulls] " +
+                    ",[CAL Units Inspected],[QAL Units Inspected],[CAL Units Nonconf],[QAL Units Nonconf],[Hold Order Units],[CAL/QAL Line/FDC Audit Units] " +
+                    ",[CAL/QAL Line/FDC Audit Units Nonconf],[CAL/QAL Units Inspected],[CAL/QAL Units Nonconf] " +
+                    "FROM [TulQual].[dbo].[RTYtblDataEntry]"
+                /*
+                CommandText = "SELECT TOP 100 [ID],[DTStamp],[DTShiftStart],[ModelNbr],[SerialNbr],[PassFail],[LineNbr],[ShiftNbr],[Computer],[Word40],[Word41],[Word42]" +
                     ",[Word43],[Word44],[Word45],[Word46],[Word47],[Word48],[Word49],[Word50],[Word51],[Word52],[Word53],[Word54],[Word55],[Word56]" +
                     ",[Word57],[Word58],[Word59],[Word60],[Word61],[Word62],[Word63],[Word64],[Word65],[Word66],[Word67],[Word68],[Word69],[Word70]" +
                     ",[Word71],[Word72],[Word73],[Word74],[Word75],[Word76],[Word77],[Word78],[Word79],[Word80] " +
                     "FROM[Division].[dbo].[asyTestRecords] where LineNbr = 2 and computer = 'LN' and dtstamp > '2/1/2018 5:00' order by dtstamp desc"
+                 */
             };
 
             try
