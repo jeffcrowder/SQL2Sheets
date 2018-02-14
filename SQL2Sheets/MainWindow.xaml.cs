@@ -32,7 +32,9 @@ namespace SQL2Sheets
     {
         public static MainWindow AppWindow;
         private List<DataProject> dpList = new List<DataProject>();
-
+        //TODO need to implement the backgroundworker thread to keep form responsive during database work
+        //  With backgroundworker I need to implement worker_DoWork method and worker_RunWorkerCompleted method
+        //BackgroundWorker worker;
         public MainWindow()
         {
             InitializeComponent();
@@ -42,7 +44,7 @@ namespace SQL2Sheets
 
         private void RunButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO this is place for logic????
+            //TODO need a method to check for valid data in the form
             SetDebugScreen(ProjectName.Text + SheetID.Text + ConnectionString.Text + SqlColumns.Text + SelectStatement.Text);
 
             // Need to figure out how to dynamically make more program objects based on user entries
@@ -50,7 +52,6 @@ namespace SQL2Sheets
             // Now that I have multiple objects created that could run indefinetly now I need threads.
 
             ActivityTab.IsSelected = true;
-           
             CreateDataProject();
         }
 
@@ -58,12 +59,11 @@ namespace SQL2Sheets
         {
             //Problem I dont know if the object is valid! If user puts in bad data program will crash.
             // Yes I know this is rediculous. I should convert the object into a JSON string and pass that instead.
-            dpList.Add(new DataProject(ProjectName.Text,SheetID.Text,ConnectionString.Text,SqlColumns.Text,SelectStatement.Text));
+            dpList.Add(new DataProject(ProjectName.Text, SheetID.Text, ConnectionString.Text, SqlColumns.Text, SelectStatement.Text));
         }
 
         private void DestroyDataProject()
         {
-
             //dpList.Remove();
         }
 
@@ -105,20 +105,13 @@ namespace SQL2Sheets
         }
 
 
-
-
         //TODO start moving this crap to methods or other objects.
         public void MainRun()
         {
             //TODO Method to set credentials
-
             //TODO MEthod to connect and pull data from SQL
-
             //TODO Method to clear the sheet
-
             //TODO Method to write the header and data
-
-
 
             UserCredential credential;
 
@@ -143,8 +136,6 @@ namespace SQL2Sheets
                 ApplicationName = ApplicationName,
             });
 
-            // Prints the data from a sample spreadsheet:
-            // https://docs.google.com/spreadsheets/d/1c54Cy_B43h5-nmE7r6Slvj2w8Pl0XFxgaWpTxO9s9So/edit#gid=0
 
             // here is the actual data to be sent to sheet
             IList<object> headerList;
@@ -174,7 +165,7 @@ namespace SQL2Sheets
 
             Request r = new Request { DeleteDimension = ddr };
 
-            // { "requests": [{ "deleteDimension": { "range": { "sheetId": 1809337217, "startIndex": 1}} }  ]};
+            //THIS IS FOR deleteDimension { "requests": [{ "deleteDimension": { "range": { "sheetId": 1809337217, "startIndex": 1}} }  ]};
             List<Request> batchRequests = new List<Request>() { r };
 
             BatchUpdateSpreadsheetRequest requestBody = new BatchUpdateSpreadsheetRequest() { Requests = batchRequests };
@@ -187,12 +178,13 @@ namespace SQL2Sheets
             //API method to update the sheet 
             //THis performs a batch request to write the headerlist
             //TODO add the SQL data to this update request
+            //THIS IS FOR DATA   { "requests": [{ "valueInputOption": "RAW", "data": [{ "majorDimension": "ROWS","range": "","values": [],[],[] }] }] }
             valueRange.Values = new List<IList<object>> { headerList };
             SpreadsheetsResource.ValuesResource.UpdateRequest update = service.Spreadsheets.Values.Update(valueRange, sID, dataRange);
             update.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
             UpdateValuesResponse result;
 
-            //TODO when I get both header and data this execute needs to be in a throttled thread to update at a specified rate
+            //TODO when I get both header and data this execute needs to be in a throttled, thread to update at a specified rate
             result = update.Execute();
             
             SqlConnection sqlConnection = new SqlConnection(connection);
@@ -252,7 +244,6 @@ namespace SQL2Sheets
                         //This is the GOOGLE query Throttle they only allow 500 writes per 100 sec
                         System.Threading.Thread.Sleep(20);
                         AppendValuesResponse appendValueResponse = appendRequest.Execute();
-                        //Console.WriteLine("Writing to Sheet: row{0}", cnt);
                         SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Writing to Sheet: row{" + cnt.ToString() + "}");
                     }
                     catch (Exception e)
