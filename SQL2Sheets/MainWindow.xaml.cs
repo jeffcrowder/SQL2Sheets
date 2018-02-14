@@ -30,11 +30,14 @@ namespace SQL2Sheets
     /// </summary>
     public partial class MainWindow : Window
     {
+        public static MainWindow AppWindow;
         private List<DataProject> dpList = new List<DataProject>();
 
         public MainWindow()
         {
             InitializeComponent();
+            //set AppWindow so I can access it from other classes
+            AppWindow = this;
         }
 
         private void RunButton_Click(object sender, RoutedEventArgs e)
@@ -47,13 +50,14 @@ namespace SQL2Sheets
             // Now that I have multiple objects created that could run indefinetly now I need threads.
 
             ActivityTab.IsSelected = true;
+           
             CreateDataProject();
         }
 
         private void CreateDataProject()
         {
             //Problem I dont know if the object is valid! If user puts in bad data program will crash.
-            // ALSO. Yes I know this is rediculous. I should convert the object into a JSON string and pass that instead.
+            // Yes I know this is rediculous. I should convert the object into a JSON string and pass that instead.
             dpList.Add(new DataProject(ProjectName.Text,SheetID.Text,ConnectionString.Text,SqlColumns.Text,SelectStatement.Text));
         }
 
@@ -65,12 +69,14 @@ namespace SQL2Sheets
 
         public void SetDebugScreen(string data)
         {
+            //How do I get the DataProject class to use this method?
             int tl = TextOutput.Text.Length + data.Length;
-            TextOutput.Text = tl.ToString() + data + "\n" + TextOutput.Text;
+            TextOutput.Text = "{" + tl.ToString()+"} " + data + "\n" + TextOutput.Text;
         }
 
     }
 
+    //Do I really need to do this? Or should all of the API and SQL stuff just be methods of the main Window?
     class DataProject
     {
         // If modifying these scopes, delete your previously saved credentials
@@ -83,6 +89,7 @@ namespace SQL2Sheets
         private string connection;
         private string header;
         private string select;
+        private string dataRange = "A1:ZZ";
 
         public DataProject(string projectName, string sheetID, string connectionString, string sqlColumns, string selectStatement )
         {
@@ -103,6 +110,16 @@ namespace SQL2Sheets
         //TODO start moving this crap to methods or other objects.
         public void MainRun()
         {
+            //TODO Method to set credentials
+
+            //TODO MEthod to connect and pull data from SQL
+
+            //TODO Method to clear the sheet
+
+            //TODO Method to write the header and data
+
+
+
             UserCredential credential;
 
             using (var stream = new FileStream("client_secret.json", FileMode.Open, FileAccess.Read))
@@ -116,7 +133,7 @@ namespace SQL2Sheets
                     "user",
                     CancellationToken.None,
                     new FileDataStore(credPath, true)).Result;
-                Console.WriteLine("Credential file saved to:\r\n" + credPath + "\r\n");
+                SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Credential file saved to:\r\n" + credPath + "\r\n");                
             }
 
             // Create Google Sheets API service.
@@ -129,31 +146,21 @@ namespace SQL2Sheets
             // Prints the data from a sample spreadsheet:
             // https://docs.google.com/spreadsheets/d/1c54Cy_B43h5-nmE7r6Slvj2w8Pl0XFxgaWpTxO9s9So/edit#gid=0
 
-            // Define request parameters.
-            String spreadsheetId = "1c54Cy_B43h5-nmE7r6Slvj2w8Pl0XFxgaWpTxO9s9So";
-
             // here is the actual data to be sent to sheet
-            List<object> headerList = new List<object>() {
-            "ID","DTStamp","DTShiftStart","ModelNbr","SerialNbr","PassFail","LineNbr","ShiftNbr","Computer","Word40","Word41","Word42"
-            ,"Word43","Word44","Word45","Word46","Word47","Word48","Word49","Word50","Word51","Word52","Word53","Word54","Word55","Word56"
-            ,"Word57","Word58","Word59","Word60","Word61","Word62","Word63","Word64","Word65","Word66","Word67","Word68","Word69","Word70"
-            ,"Word71","Word72","Word73","Word74","Word75","Word76","Word77","Word78","Word79","Word80"};
-
-            //var dataList = new List<object>();
-
-            //Write some data in the very first active sheet
-            String dataRange = "A1:ZZ";
+            IList<object> headerList;
+            headerList = header.Split(',');
+            
             ValueRange valueRange = new ValueRange { MajorDimension = "ROWS" };
-
-            Console.WriteLine("Clear the Sheet");
+            
+            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Clear the Sheet");
 
             //API method to clear the sheet
             ClearValuesRequest clearValuesRequest = new ClearValuesRequest();
-            SpreadsheetsResource.ValuesResource.ClearRequest cr = service.Spreadsheets.Values.Clear(clearValuesRequest, spreadsheetId, dataRange);
+            SpreadsheetsResource.ValuesResource.ClearRequest cr = service.Spreadsheets.Values.Clear(clearValuesRequest, sID, dataRange);
             // TODO add a try catch statement
             ClearValuesResponse clearResponse = cr.Execute();
-
-            Console.WriteLine("Delete all rows in Sheet");
+            
+            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Delete all rows in Sheet");
 
             //API method to batch update
             DimensionRange dr = new DimensionRange
@@ -172,51 +179,44 @@ namespace SQL2Sheets
 
             BatchUpdateSpreadsheetRequest requestBody = new BatchUpdateSpreadsheetRequest() { Requests = batchRequests };
 
-            SpreadsheetsResource.BatchUpdateRequest bRequest = service.Spreadsheets.BatchUpdate(requestBody, spreadsheetId);
+            SpreadsheetsResource.BatchUpdateRequest bRequest = service.Spreadsheets.BatchUpdate(requestBody, sID);
             BatchUpdateSpreadsheetResponse busr = bRequest.Execute();
+            
+            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Write the header to the Sheet");
 
-            Console.WriteLine("Write the Headers to the Sheet");
-
-            //API method to update the sheet
+            //API method to update the sheet 
+            //THis performs a batch request to write the headerlist
+            //TODO add the SQL data to this update request
             valueRange.Values = new List<IList<object>> { headerList };
-            SpreadsheetsResource.ValuesResource.UpdateRequest update = service.Spreadsheets.Values.Update(valueRange, spreadsheetId, dataRange);
+            SpreadsheetsResource.ValuesResource.UpdateRequest update = service.Spreadsheets.Values.Update(valueRange, sID, dataRange);
             update.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
             UpdateValuesResponse result;
+
+            //TODO when I get both header and data this execute needs to be in a throttled thread to update at a specified rate
             result = update.Execute();
             
-            //SqlConnection sqlConnection = new SqlConnection("Data Source=tul-mssql;Initial Catalog=Division;User ID=tqisadmin;Password=admin2k");
-            SqlConnection sqlConnection = new SqlConnection("Data Source=TULLCND62158MM\\SQLEXPRESS;Initial Catalog=TulQual;User ID=tqisadmin;Password=admin2k");
+            SqlConnection sqlConnection = new SqlConnection(connection);
 
             SqlCommand cmd = new SqlCommand
             {
                 Connection = sqlConnection,
                 CommandTimeout = 60,
                 CommandType = CommandType.Text,
-                CommandText = "SELECT TOP 10 [Date],[Shift],[Line],[Production],[Repair Bay Units],[Test Pulls],[Repair Bay Units w/o Test Pulls] " +
-                    ",[CAL Units Inspected],[QAL Units Inspected],[CAL Units Nonconf],[QAL Units Nonconf],[Hold Order Units],[CAL/QAL Line/FDC Audit Units] " +
-                    ",[CAL/QAL Line/FDC Audit Units Nonconf],[CAL/QAL Units Inspected],[CAL/QAL Units Nonconf] " +
-                    "FROM [TulQual].[dbo].[RTYtblDataEntry]"
-                /*
-                CommandText = "SELECT TOP 100 [ID],[DTStamp],[DTShiftStart],[ModelNbr],[SerialNbr],[PassFail],[LineNbr],[ShiftNbr],[Computer],[Word40],[Word41],[Word42]" +
-                    ",[Word43],[Word44],[Word45],[Word46],[Word47],[Word48],[Word49],[Word50],[Word51],[Word52],[Word53],[Word54],[Word55],[Word56]" +
-                    ",[Word57],[Word58],[Word59],[Word60],[Word61],[Word62],[Word63],[Word64],[Word65],[Word66],[Word67],[Word68],[Word69],[Word70]" +
-                    ",[Word71],[Word72],[Word73],[Word74],[Word75],[Word76],[Word77],[Word78],[Word79],[Word80] " +
-                    "FROM[Division].[dbo].[asyTestRecords] where LineNbr = 2 and computer = 'LN' and dtstamp > '2/1/2018 5:00' order by dtstamp desc"
-                 */
+                CommandText = select
             };
 
             try
             {
-                Console.WriteLine("Open the SQL connection");
+                SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Open the SQL connection");
                 sqlConnection.Open();
             }
             catch (Exception e)
             {
-                Console.WriteLine("Whoops we cannot connect to SQL - exception {0}", e.HResult);
+                SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Whoops we cannot connect to SQL - exception " + e.HResult.ToString());
                 //Environment.Exit(1);
             }
-
-            Console.WriteLine("Please wait while reading data from SQL");
+            
+            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Please wait while reading data from SQL server");
             SqlDataReader reader;
             reader = cmd.ExecuteReader();
 
@@ -226,14 +226,14 @@ namespace SQL2Sheets
             var dataList = new List<object>();
             valueDataRange.Values = new List<IList<object>> { dataList };
 
-            //API to append data to sheet
-            SpreadsheetsResource.ValuesResource.AppendRequest appendRequest = service.Spreadsheets.Values.Append(valueDataRange, spreadsheetId, dataRange);
+            //API to append data to sheet. This does not use the batch
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            SpreadsheetsResource.ValuesResource.AppendRequest appendRequest = service.Spreadsheets.Values.Append(valueDataRange, sID, dataRange);
             appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.RAW;
             appendRequest.InsertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
 
             if (reader.HasRows)
             {
-                //Console.WriteLine("{0}",reader.FieldCount);
                 Object[] colValues = new Object[reader.FieldCount];
 
                 int throttleCount = 0;
@@ -252,12 +252,12 @@ namespace SQL2Sheets
                         //This is the GOOGLE query Throttle they only allow 500 writes per 100 sec
                         System.Threading.Thread.Sleep(20);
                         AppendValuesResponse appendValueResponse = appendRequest.Execute();
-                        Console.WriteLine("Writing to Sheet: row{0}", cnt);
+                        //Console.WriteLine("Writing to Sheet: row{0}", cnt);
+                        SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Writing to Sheet: row{" + cnt.ToString() + "}");
                     }
                     catch (Exception e)
                     {
-
-                        Console.WriteLine("Whoa buddy slowdown {0} exception {1}", throttleCount, e.HResult);
+                        SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Whoa buddy slowdown! Exception " + e.HResult.ToString());
                         System.Threading.Thread.Sleep(3000);
                         throttleCount++;
                     }
@@ -266,13 +266,10 @@ namespace SQL2Sheets
             }
             else
             {
-                Console.WriteLine("No rows found.");
+                SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("No rows found");
             }
-
-            // sit here and wait for a while
-            Console.WriteLine("Done waiting to close reader and SQL");
-            System.Threading.Thread.Sleep(3000);
-
+            
+            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Close reader and SQL");
             reader.Close();
             sqlConnection.Close();
         }
