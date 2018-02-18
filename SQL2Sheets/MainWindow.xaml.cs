@@ -75,13 +75,12 @@ namespace SQL2Sheets
 
     }
 
-    //Do I really need to do this? Or should all of the API and SQL stuff just be methods of the main Window?
     class DataProject
     {
         // If modifying these scopes, delete your previously saved credentials
         // at ~/.credentials/sheets.googleapis.com-dotnet-quickstart.json
         static string[] Scopes = { SheetsService.Scope.Spreadsheets };
-        static string ApplicationName = "Google Sheets API .NET Quickstart";
+        static string ApplicationName = "sql2sheets";
 
         private string name;
         private string sID;
@@ -108,11 +107,9 @@ namespace SQL2Sheets
         //TODO start moving this crap to methods or other objects.
         public void MainRun()
         {
-
             //TODO MEthod to connect and pull data from SQL
             //TODO Method to clear the sheet
             //TODO Method to write the header and data
-
 
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             UserCredential credential;
@@ -138,6 +135,7 @@ namespace SQL2Sheets
                 ApplicationName = ApplicationName,
             });
 
+            // Setup the SQL connection
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             SqlConnection sqlConnection = new SqlConnection(connection);
 
@@ -196,7 +194,6 @@ namespace SQL2Sheets
             BatchUpdateSpreadsheetResponse busr = bRequest.Execute();
             */
 
-
             /* I have added this to the batch method
             //API method to update the header in the Sheet 
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -215,7 +212,7 @@ namespace SQL2Sheets
 
             //API method to batch value update the data in the Sheet 
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Write the header to the Sheet");
+            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Write the data to the Sheet");
 
             IList<object> headerList;
             headerList = header.Split(',');
@@ -226,25 +223,21 @@ namespace SQL2Sheets
                 Values = new List<IList<object>> { headerList }
             };
 
-            //TODO use SQL data here
-            //var temp = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15";
-            //IList<object> tempData = temp.Split(',');
-
             ValueRange dataVR = new ValueRange()
             {
                 MajorDimension = "ROWS",
                 Range = "A2:ZZ",
-                //Values = new List<IList<object>> { tempData } //I still have no clue what this is doing List<IList<object>>
                 Values = new List<IList<object>>()
             };
 
+            //Need a list of ValueRanges for the BatchUpdateValuesRequest API
             List<ValueRange> data = new List<ValueRange>
             {
                 headerVR,
                 dataVR
             };
 
-            //Build the valueRange full sql data
+            //Build the data 2D List object with SQL data
             if (reader.HasRows)
             {
                 Object[] colValues = new Object[reader.FieldCount];
@@ -260,13 +253,13 @@ namespace SQL2Sheets
                     valueList.Add(rowData);
                     rows++;
                 }
+                //after 2D list is built point it to the Values method in the ValueRange object
                 dataVR.Values = valueList;
             }
             else
             {
                 SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("No rows found");
             }
-
 
             BatchUpdateValuesRequest buvr = new BatchUpdateValuesRequest()
             {
@@ -279,7 +272,7 @@ namespace SQL2Sheets
 
 
             /*
-            //API to append data to sheet. This does not use the batch
+            //API to append data to sheet. This does not use the batchUpdate
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // Data is accessible through the DataReader object here.
             ValueRange valueDataRange = new ValueRange() { MajorDimension = "ROWS" };

@@ -1,2 +1,15 @@
 # SQL2Sheets
-This is my attempt to create a program that connects a local SQL database to a Google sheet using the API. This is a noob program that is a learning, work in progress!
+This is my attempt to create a program that connects a local SQL database to a Google sheet using the API. 
+Right now this is a noob program that is a learning, work in progress.
+
+TODO
+1. Make this Object Oriented.
+2. Add the backgroundworker thread and implement worker_DoWork method and worker_RunWorkerCompleted.
+3. Add functionality to have the projects update at a specified rate. Ex once per day.....
+4. Have the active list of projects showing status in the DataGrid on activity tab
+5. Add ability to dynamically create and destroy projects.
+6. Give user ability to update projects using either batchupdate or append methods.
+7. Add some level of error checking in the user input fields
+8. Make this program run as a service
+9. Add more exception handling
+10. Clean up the credentials
