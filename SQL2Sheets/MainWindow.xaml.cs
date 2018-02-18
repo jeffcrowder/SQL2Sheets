@@ -69,7 +69,6 @@ namespace SQL2Sheets
 
         public void SetDebugScreen(string data)
         {
-            //How do I get the DataProject class to use this method?
             int tl = TextOutput.Text.Length + data.Length;
             TextOutput.Text = "{" + tl.ToString()+"} " + data + "\n" + TextOutput.Text;
         }
@@ -91,7 +90,8 @@ namespace SQL2Sheets
         private string select;
         private string dataRange = "A1:ZZ";
 
-        public DataProject(string projectName, string sheetID, string connectionString, string sqlColumns, string selectStatement )
+
+        public DataProject(string projectName, string sheetID, string connectionString, string sqlColumns, string selectStatement)
         {
             //TODO add the initialization here then call mainRun
             // change the crazy string arguments into a single JSON object
@@ -108,11 +108,13 @@ namespace SQL2Sheets
         //TODO start moving this crap to methods or other objects.
         public void MainRun()
         {
-            //TODO Method to set credentials
+
             //TODO MEthod to connect and pull data from SQL
             //TODO Method to clear the sheet
             //TODO Method to write the header and data
 
+
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             UserCredential credential;
 
             using (var stream = new FileStream("client_secret.json", FileMode.Open, FileAccess.Read))
@@ -126,7 +128,7 @@ namespace SQL2Sheets
                     "user",
                     CancellationToken.None,
                     new FileDataStore(credPath, true)).Result;
-                SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Credential file saved to:\r\n" + credPath + "\r\n");                
+                SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Credential file saved to:\r\n" + credPath + "\r\n");
             }
 
             // Create Google Sheets API service.
@@ -136,57 +138,7 @@ namespace SQL2Sheets
                 ApplicationName = ApplicationName,
             });
 
-
-            // here is the actual data to be sent to sheet
-            IList<object> headerList;
-            headerList = header.Split(',');
-            
-            ValueRange valueRange = new ValueRange { MajorDimension = "ROWS" };
-            
-            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Clear the Sheet");
-
-            //API method to clear the sheet
-            ClearValuesRequest clearValuesRequest = new ClearValuesRequest();
-            SpreadsheetsResource.ValuesResource.ClearRequest cr = service.Spreadsheets.Values.Clear(clearValuesRequest, sID, dataRange);
-            // TODO add a try catch statement
-            ClearValuesResponse clearResponse = cr.Execute();
-            
-            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Delete all rows in Sheet");
-
-            //API method to batch update
-            DimensionRange dr = new DimensionRange
-            {
-                Dimension = "ROWS",
-                StartIndex = 1,
-                SheetId = 1809337217 //this is a problem
-            };
-
-            DeleteDimensionRequest ddr = new DeleteDimensionRequest() { Range = dr };
-
-            Request r = new Request { DeleteDimension = ddr };
-
-            //THIS IS FOR deleteDimension { "requests": [{ "deleteDimension": { "range": { "sheetId": 1809337217, "startIndex": 1}} }  ]};
-            List<Request> batchRequests = new List<Request>() { r };
-
-            BatchUpdateSpreadsheetRequest requestBody = new BatchUpdateSpreadsheetRequest() { Requests = batchRequests };
-
-            SpreadsheetsResource.BatchUpdateRequest bRequest = service.Spreadsheets.BatchUpdate(requestBody, sID);
-            BatchUpdateSpreadsheetResponse busr = bRequest.Execute();
-            
-            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Write the header to the Sheet");
-
-            //API method to update the sheet 
-            //THis performs a batch request to write the headerlist
-            //TODO add the SQL data to this update request
-            //THIS IS FOR DATA   { "requests": [{ "valueInputOption": "RAW", "data": [{ "majorDimension": "ROWS","range": "","values": [],[],[] }] }] }
-            valueRange.Values = new List<IList<object>> { headerList };
-            SpreadsheetsResource.ValuesResource.UpdateRequest update = service.Spreadsheets.Values.Update(valueRange, sID, dataRange);
-            update.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
-            UpdateValuesResponse result;
-
-            //TODO when I get both header and data this execute needs to be in a throttled, thread to update at a specified rate
-            result = update.Execute();
-            
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             SqlConnection sqlConnection = new SqlConnection(connection);
 
             SqlCommand cmd = new SqlCommand
@@ -207,19 +159,134 @@ namespace SQL2Sheets
                 SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Whoops we cannot connect to SQL - exception " + e.HResult.ToString());
                 //Environment.Exit(1);
             }
-            
+
             SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Please wait while reading data from SQL server");
             SqlDataReader reader;
             reader = cmd.ExecuteReader();
 
+
+            //API method to clear the sheet of all previous values
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Clear the Sheet");
+            ClearValuesRequest clearValuesRequest = new ClearValuesRequest();
+            SpreadsheetsResource.ValuesResource.ClearRequest cr = service.Spreadsheets.Values.Clear(clearValuesRequest, sID, dataRange);
+            // TODO add a try catch statement
+            ClearValuesResponse clearResponse = cr.Execute();
+
+            /*
+            //API method to batch update and Delete all the rows
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Delete all rows in Sheet");
+            DimensionRange dr = new DimensionRange
+            {
+                Dimension = "ROWS",
+                StartIndex = 1000,
+                SheetId = 1809337217 //this is a problem
+            };
+
+            DeleteDimensionRequest ddr = new DeleteDimensionRequest() { Range = dr };
+
+            Request r = new Request { DeleteDimension = ddr };
+
+            //THIS IS FOR deleteDimension { "requests": [{ "deleteDimension": { "range": { "sheetId": 1809337217, "startIndex": 1}} }  ]};
+            List<Request> batchRequests = new List<Request>() { r };
+
+            BatchUpdateSpreadsheetRequest requestBody = new BatchUpdateSpreadsheetRequest() { Requests = batchRequests };
+            SpreadsheetsResource.BatchUpdateRequest bRequest = service.Spreadsheets.BatchUpdate(requestBody, sID);
+            BatchUpdateSpreadsheetResponse busr = bRequest.Execute();
+            */
+
+
+            /* I have added this to the batch method
+            //API method to update the header in the Sheet 
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Write the header to the Sheet");
+            IList<object> headerList;
+            headerList = header.Split(',');
+
+            ValueRange valueRange = new ValueRange { MajorDimension = "ROWS" };
+            valueRange.Values = new List<IList<object>> { headerList };
+
+            SpreadsheetsResource.ValuesResource.UpdateRequest update = service.Spreadsheets.Values.Update(valueRange, sID, dataRange);
+            update.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+            UpdateValuesResponse result;
+            result = update.Execute();
+            */
+
+            //API method to batch value update the data in the Sheet 
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Write the header to the Sheet");
+
+            IList<object> headerList;
+            headerList = header.Split(',');
+            ValueRange headerVR = new ValueRange
+            {
+                MajorDimension = "ROWS",
+                Range = "A1",
+                Values = new List<IList<object>> { headerList }
+            };
+
+            //TODO use SQL data here
+            //var temp = "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15";
+            //IList<object> tempData = temp.Split(',');
+
+            ValueRange dataVR = new ValueRange()
+            {
+                MajorDimension = "ROWS",
+                Range = "A2:ZZ",
+                //Values = new List<IList<object>> { tempData } //I still have no clue what this is doing List<IList<object>>
+                Values = new List<IList<object>>()
+            };
+
+            List<ValueRange> data = new List<ValueRange>
+            {
+                headerVR,
+                dataVR
+            };
+
+            //Build the valueRange full sql data
+            if (reader.HasRows)
+            {
+                Object[] colValues = new Object[reader.FieldCount];
+                List<IList<object>> valueList = new List<IList<object>>();
+                var rows = 0;
+                while (reader.Read())
+                {
+                    List<object> rowData = new List<object>();
+                    for (int i = 0; i < reader.GetValues(colValues); i++)
+                    {
+                        rowData.Add(colValues[i]);
+                    }
+                    valueList.Add(rowData);
+                    rows++;
+                }
+                dataVR.Values = valueList;
+            }
+            else
+            {
+                SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("No rows found");
+            }
+
+
+            BatchUpdateValuesRequest buvr = new BatchUpdateValuesRequest()
+            {
+                ValueInputOption = "RAW",
+                Data = data
+            };
+
+            SpreadsheetsResource.ValuesResource.BatchUpdateRequest request = service.Spreadsheets.Values.BatchUpdate(buvr, sID);
+            BatchUpdateValuesResponse response = request.Execute();
+
+
+            /*
+            //API to append data to sheet. This does not use the batch
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // Data is accessible through the DataReader object here.
             ValueRange valueDataRange = new ValueRange() { MajorDimension = "ROWS" };
 
             var dataList = new List<object>();
             valueDataRange.Values = new List<IList<object>> { dataList };
 
-            //API to append data to sheet. This does not use the batch
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             SpreadsheetsResource.ValuesResource.AppendRequest appendRequest = service.Spreadsheets.Values.Append(valueDataRange, sID, dataRange);
             appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.RAW;
             appendRequest.InsertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
@@ -241,7 +308,7 @@ namespace SQL2Sheets
 
                     try
                     {
-                        //This is the GOOGLE query Throttle they only allow 500 writes per 100 sec
+                        //This is the GOOGLE query Throttle they only allow 100 writes per 100 sec per user
                         System.Threading.Thread.Sleep(20);
                         AppendValuesResponse appendValueResponse = appendRequest.Execute();
                         SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Writing to Sheet: row{" + cnt.ToString() + "}");
@@ -259,7 +326,8 @@ namespace SQL2Sheets
             {
                 SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("No rows found");
             }
-            
+            */
+
             SQL2Sheets.MainWindow.AppWindow.SetDebugScreen("Close reader and SQL");
             reader.Close();
             sqlConnection.Close();
