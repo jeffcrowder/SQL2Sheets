@@ -13,3 +13,4 @@ TODO
 8. Make this program run as a service
 9. Add more exception handling
 10. Clean up the credentials
+11. Can I turn this into a web based application that runs with the local SQL server?
